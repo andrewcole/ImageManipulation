@@ -48,6 +48,16 @@ namespace Illallangi.ImageManipulation.PowerShell
         /// </summary>
         private Graphics currentWatermarkGraphics;
 
+        /// <summary>
+        /// Holds the current value of the WatermarkWidth property.
+        /// </summary>
+        private float? currentWatermarkWidth;
+
+        /// <summary>
+        /// Holds the current value of the WatermarkHeight property.
+        /// </summary>
+        private float? currentWatermarkHeight;
+
         #endregion
 
         #region Constructors
@@ -57,6 +67,8 @@ namespace Illallangi.ImageManipulation.PowerShell
             this.Opacity = 100;
             this.Output = "{0}-{1}.{2}";
             this.OutputFormat = ImageFormat.Jpeg;
+            this.WatermarkX = 0;
+            this.WatermarkY = 0;
         }
 
         #endregion
@@ -87,6 +99,16 @@ namespace Illallangi.ImageManipulation.PowerShell
             }
         }
 
+        private float InputWidth
+        {
+            get { return this.InputBitmap.Width; }
+        }
+
+        private float InputHeight
+        {
+            get { return this.InputBitmap.Height; }
+        }
+        
         private Bitmap WatermarkBitmap
         {
             get
@@ -108,7 +130,7 @@ namespace Illallangi.ImageManipulation.PowerShell
                                 (this.currentWatermarkGraphics = Graphics.FromImage(this.WatermarkBitmap)));
             }
         }
-
+        
         #endregion
 
         #region Public Properties
@@ -127,7 +149,17 @@ namespace Illallangi.ImageManipulation.PowerShell
         }
         
         [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
-        public int Opacity { get; set; }
+        public int Opacity 
+        { 
+            get
+            {
+                return 100;
+            }
+            set
+            {
+                throw new NotImplementedException();
+            } 
+        }
 
         [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
         public string Output { get; set; }
@@ -148,6 +180,48 @@ namespace Illallangi.ImageManipulation.PowerShell
             }
         }
 
+        [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
+        public float WatermarkWidth
+        {
+            get
+            {
+                if (this.currentWatermarkWidth.HasValue)
+                {
+                    return this.currentWatermarkWidth.Value;
+                }
+                if (this.currentWatermarkHeight.HasValue)
+                {
+                    return (this.currentWatermarkHeight.Value/this.WatermarkBitmap.Height)*this.WatermarkBitmap.Width;
+                }
+                return this.WatermarkBitmap.Width;
+            }
+            set { this.currentWatermarkWidth = value; }
+        }
+
+        [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
+        public float WatermarkHeight
+        {
+            get
+            {
+                if (this.currentWatermarkHeight.HasValue)
+                {
+                    return this.currentWatermarkHeight.Value;
+                }
+                if (this.currentWatermarkWidth.HasValue)
+                {
+                    return (this.currentWatermarkWidth.Value / this.WatermarkBitmap.Width) * this.WatermarkBitmap.Height;
+                }
+                return this.WatermarkBitmap.Height;
+            }
+            set { this.currentWatermarkHeight = value; }
+        }
+
+        [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
+        public int WatermarkX { get; set; }
+
+        [Parameter(ValueFromPipeline = false, ValueFromPipelineByPropertyName = true)]
+        public int WatermarkY { get; set; }
+
         #endregion
 
         #endregion
@@ -163,15 +237,22 @@ namespace Illallangi.ImageManipulation.PowerShell
 
         protected override void ProcessRecord()
         {
-            this.InputGraphics.DrawImage(this.WatermarkBitmap, 0, 0);
-            this.InputBitmap.Clone(
-                new Rectangle(0,0,this.InputBitmap.Width, this.InputBitmap.Height), 
-                PixelFormat.Undefined)
-                    .Save(Path.Combine(this.SessionState.Path.CurrentFileSystemLocation.Path,
-                                string.Format(this.Output, Path.GetFileNameWithoutExtension(this.Input), 
-                                    Path.GetFileNameWithoutExtension(this.Watermark), 
-                                    this.OutputFormat.ToString().ToLower())), 
-                                this.OutputFormat);
+            using (var bitmap = new Bitmap(this.InputBitmap))
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                var x = ((this.InputWidth - this.WatermarkWidth) * this.WatermarkX) / 100;
+                var y = ((this.InputHeight - this.WatermarkHeight) * this.WatermarkY) / 100;
+                graphics.DrawImage(this.WatermarkBitmap,
+                                   x,
+                                   y,
+                                   this.WatermarkWidth,
+                                   this.WatermarkHeight);
+                bitmap.Save(Path.Combine(this.SessionState.Path.CurrentFileSystemLocation.Path,
+                                         string.Format(this.Output, Path.GetFileNameWithoutExtension(this.Input),
+                                                       Path.GetFileNameWithoutExtension(this.Watermark),
+                                                       this.OutputFormat.ToString().ToLower())),
+                            this.OutputFormat);
+            }
         }
 
         protected override void EndProcessing()
