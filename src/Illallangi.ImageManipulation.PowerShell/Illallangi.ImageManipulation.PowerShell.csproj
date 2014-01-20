@@ -47,16 +47,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddWatermark.cs" />
-    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ImageManipulation.psd1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
