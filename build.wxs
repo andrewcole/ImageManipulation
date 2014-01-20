@@ -1,0 +1,109 @@
+<?define Manufacturer="Illallangi Enterprises" ?>
+<?define AppName="Image Manipulation PowerShell Module" ?>
+<?define Version="0.0.0.1" ?>
+
+<?if $(sys.BUILDARCH)=x64 ?>
+<?define Win64="yes" ?>
+<?define PlatformProgramFilesFolder="ProgramFiles64Folder" ?>
+<?define PlatformSystemFolder="System64Folder" ?>
+<?define ProductId="{30460AFB-51E5-41C5-8E25-36C759AA4811}" ?>
+<?define UpgradeCode="{1A700180-536F-4243-98E7-3CDCBA9155B4}" ?>
+<?else ?>
+<?define Win64="no" ?>
+<?define PlatformProgramFilesFolder="ProgramFilesFolder" ?>
+<?define PlatformSystemFolder="SystemFolder" ?>
+<?define ProductId="{1DAA7BDA-EE84-4D74-A5B2-96EC929F2406}" ?>
+<?define UpgradeCode="{1E6AA3B6-E265-4FC2-81FC-297AC9509624}" ?>
+<?endif ?>
+
+<Wix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Name="$(var.AppName) $(sys.BUILDARCH) v$(var.Version)"
+           Manufacturer="$(var.Manufacturer)"
+           Version="$(var.Version)"
+           Id="$(var.ProductId)"
+           UpgradeCode="$(var.UpgradeCode)"
+           Language="1033"
+           Codepage="1252" >
+
+    <Package InstallerVersion="200" Compressed="yes" Id="*" />
+    <Media Id="1" Cabinet="package.cab" EmbedCab="yes" />
+
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="$(var.Version)"
+                      IncludeMinimum="no"
+                      OnlyDetect="yes"
+                      Language="1033"
+                      Property="NEWPRODUCTFOUND"/>
+
+      <UpgradeVersion Maximum="$(var.Version)"
+                      IncludeMaximum="no"
+                      OnlyDetect="no"
+                      Language="1033"
+                      Property="OLDPRODUCTFOUND"/>
+    </Upgrade>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Component Id="Empty" Guid="" />
+      <Directory Id="$(var.PlatformSystemFolder)">
+        <Directory Id="WindowsPowerShell" Name="WindowsPowerShell">
+          <Directory Id="v1.0" Name="v1.0">
+            <Directory Id="Modules" Name="Modules">
+              <Directory Id="SOFTWAREDIR" Name="Illallangi.ImageManipulation" />
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!--
+    <Icon Id="favicon.ico" SourceFile="$(var.source)\favicon.ico" />
+    -->
+    <Property Id="ALLUSERS" Value="1" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <Feature Id="Complete" Level="1" Title="$(var.AppName)">
+      <Component Id="IllallangiImageManipulationPowerShellDllC" Directory="SOFTWAREDIR" Guid="{559A6562-3713-461E-9CFC-ACE5C33DF758}" Permanent="yes" >
+        <File Id="IllallangiImageManipulationPowerShellDllC" KeyPath="yes" Source="$(var.source)\Illallangi.ImageManipulation.PowerShell.dll" />
+        <File Id="IllallangiImageManipulationDllCPSD1" Source="$(var.source)\Illallangi.ImageManipulation.psd1" />
+        <File Id="IllallangiImageManipulationDllCPSM1" Source="$(var.source)\Illallangi.ImageManipulation.psm1" />
+        <File Id="LogoPngF" Source="$(var.source)\logo.png" />
+        <File Id="WallpaperJpgF" Source="$(var.source)\wallpaper.jpg" />
+      </Component>
+      <ComponentRef Id="Empty" />
+    </Feature>
+
+    <UI Id="Minimal">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WixUI_Mode" Value="Minimal" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="WelcomeDlg" />
+      <DialogRef Id="VerifyReadyDlg" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <Publish Dialog='ExitDialog' Control='Finish' Event='EndDialog' Value='Return'>1</Publish>
+    </UI>
+
+    <UIRef Id="WixUI_Common" />
+
+    <CustomAction Id="PreventDowngrading" Error="Newer version already installed." />
+
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallInitialize" />
+      <Custom Action="PreventDowngrading" After="FindRelatedProducts">NEWPRODUCTFOUND</Custom>
+    </InstallExecuteSequence>
+
+    <InstallUISequence>
+      <Custom Action="PreventDowngrading" After="FindRelatedProducts">NEWPRODUCTFOUND</Custom>
+    </InstallUISequence>
+  </Product>
+</Wix>
